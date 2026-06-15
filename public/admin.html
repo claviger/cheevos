@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cheevos — Parent Console</title>
+  <link rel="icon" href="icons/coin.svg" />
+  <link rel="stylesheet" href="css/theme.css" />
+</head>
+<body class="admin">
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark"></span>
+      <h1>Cheevos — Parents</h1>
+    </div>
+    <nav class="nav">
+      <a href="index.html" data-nav="board">← Back to Quest Board</a>
+    </nav>
+    <button id="logout" class="btn ghost hidden">Log out</button>
+  </header>
+
+  <main class="wrap">
+    <!-- Login -->
+    <section id="login" class="panel narrow hidden">
+      <h2 class="section-title">Parent Login</h2>
+      <p id="login-hint" class="section-sub"></p>
+      <form id="login-form" class="form-row">
+        <input id="password" type="password" placeholder="Parent password" autocomplete="current-password" />
+        <button class="btn" type="submit">Enter</button>
+      </form>
+      <p id="login-error" class="error-text hidden"></p>
+    </section>
+
+    <!-- Console -->
+    <section id="console" class="hidden">
+      <div class="tabs">
+        <button class="tab active" data-tab="achievements">Achievements</button>
+        <button class="tab" data-tab="rewards">Rewards</button>
+        <button class="tab" data-tab="history">Redemption History</button>
+      </div>
+
+      <!-- Achievements -->
+      <div id="tab-achievements" class="tab-panel">
+        <div class="panel">
+          <h3 id="ach-form-title">Add Achievement</h3>
+          <form id="ach-form" class="grid-form">
+            <input type="hidden" id="ach-id" />
+            <label>Title<input id="ach-title" maxlength="200" required /></label>
+            <label>Times required<input id="ach-required" type="number" min="1" value="1" required /></label>
+            <label>Points reward<input id="ach-points" type="number" min="0" value="10" required /></label>
+            <label id="ach-current-wrap" class="hidden">Done so far<input id="ach-current" type="number" min="0" value="0" /></label>
+            <div class="icon-field">
+              <span>Icon</span>
+              <button type="button" class="icon-pick" id="ach-icon-btn"></button>
+              <input type="hidden" id="ach-icon" value="trophy" />
+            </div>
+            <div class="form-actions">
+              <button class="btn" type="submit">Save</button>
+              <button class="btn ghost hidden" type="button" id="ach-cancel">Cancel</button>
+            </div>
+          </form>
+        </div>
+        <div id="ach-list" class="admin-list"></div>
+      </div>
+
+      <!-- Rewards -->
+      <div id="tab-rewards" class="tab-panel hidden">
+        <div class="panel">
+          <h3 id="rew-form-title">Add Reward</h3>
+          <form id="rew-form" class="grid-form">
+            <input type="hidden" id="rew-id" />
+            <label>Title<input id="rew-title" maxlength="200" required /></label>
+            <label>Cost (gold)<input id="rew-cost" type="number" min="0" value="50" required /></label>
+            <label>Type
+              <select id="rew-type">
+                <option value="repeatable">Repeatable</option>
+                <option value="one_time">One-time</option>
+              </select>
+            </label>
+            <div class="icon-field">
+              <span>Icon</span>
+              <button type="button" class="icon-pick" id="rew-icon-btn"></button>
+              <input type="hidden" id="rew-icon" value="gem" />
+            </div>
+            <div class="form-actions">
+              <button class="btn" type="submit">Save</button>
+              <button class="btn ghost hidden" type="button" id="rew-cancel">Cancel</button>
+            </div>
+          </form>
+        </div>
+        <div id="rew-list" class="admin-list"></div>
+      </div>
+
+      <!-- History -->
+      <div id="tab-history" class="tab-panel hidden">
+        <div class="panel">
+          <h3>Redemption History</h3>
+          <p class="section-sub">What the child has redeemed — fulfill these rewards in real life.</p>
+          <div id="history-list" class="admin-list"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Icon picker overlay -->
+    <div id="icon-modal" class="modal hidden">
+      <div class="modal-card">
+        <div class="modal-head">
+          <h3>Choose an icon</h3>
+          <button class="btn ghost" id="icon-close">✕</button>
+        </div>
+        <div id="icon-grid" class="icon-grid"></div>
+      </div>
+    </div>
+  </main>
+
+  <script type="module" src="js/admin.js"></script>
+</body>
+</html>

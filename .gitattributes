@@ -1,0 +1,8 @@
+# Normalize line endings: store LF in the repo, check out LF everywhere. Keeps
+# the Linux deploy artifacts (systemd unit, nginx conf, shell-invoked scripts)
+# correct even though development happens on Windows.
+* text=auto eol=lf
+
+# Binary-ish assets: leave untouched.
+*.png binary
+*.svg text eol=lf

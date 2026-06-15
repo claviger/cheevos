@@ -1,0 +1,33 @@
+# systemd unit for Cheevos. Install to /etc/systemd/system/cheevos.service
+# then:  sudo systemctl daemon-reload && sudo systemctl enable --now cheevos
+#
+# Assumes the app is checked out at /opt/cheevos and runs as a dedicated
+# unprivileged "cheevos" user. Adjust paths/user as needed.
+
+[Unit]
+Description=Cheevos achievement tracker
+After=network.target
+
+[Service]
+Type=simple
+User=cheevos
+Group=cheevos
+WorkingDirectory=/opt/cheevos
+ExecStart=/usr/bin/node server.js
+Restart=on-failure
+RestartSec=3
+Environment=NODE_ENV=production
+# The app reads port/basePath/secret/password from config/config.json. You can
+# also override via env, e.g.:
+# Environment=PORT=3000
+# Environment=BASE_PATH=/cheevos
+
+# Hardening — the only writable paths are the DB and the config file.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/cheevos/data /opt/cheevos/config
+
+[Install]
+WantedBy=multi-user.target

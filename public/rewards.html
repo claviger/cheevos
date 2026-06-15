@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cheevos — Treasure Vault</title>
+  <link rel="icon" href="icons/coin.svg" />
+  <link rel="stylesheet" href="css/theme.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark"></span>
+      <h1>Cheevos</h1>
+    </div>
+    <nav class="nav">
+      <a href="index.html" data-nav="board">Quest Board</a>
+      <a href="rewards.html" data-nav="vault">Treasure Vault</a>
+      <a href="hall.html" data-nav="hall">Hall of Fame</a>
+    </nav>
+    <div class="gold-badge" id="gold-badge" title="Your gold">
+      <img class="coin" src="icons/coin.svg" alt="gold" />
+      <span id="gold-value">0</span>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <h2 class="section-title">Treasure Vault</h2>
+    <p class="section-sub">Spend your gold on rewards. You can only buy what you can afford!</p>
+    <section id="vault" class="card-grid" aria-live="polite"></section>
+    <p id="empty" class="empty hidden">No rewards yet. Ask a parent to add some!</p>
+  </main>
+
+  <footer class="footer">
+    <a href="admin.html">⚙ Parents</a>
+  </footer>
+
+  <script type="module" src="js/vault.js"></script>
+</body>
+</html>
