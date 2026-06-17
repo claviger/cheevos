@@ -3,7 +3,7 @@
 import { Router } from "express";
 import { getDb, localDate, getBalance } from "../db.js";
 import * as logic from "../logic.js";
-import { str, int } from "../validate.js";
+import { str, optStr, int } from "../validate.js";
 import { handle, idParam } from "./helpers.js";
 
 // --- Public / child router -------------------------------------------------
@@ -59,6 +59,7 @@ adminAchievements.post(
     const d = getDb();
     const data = {
       title: str(req.body.title, "Title"),
+      description: optStr(req.body.description, "Description"),
       icon: str(req.body.icon, "Icon", { max: 80 }),
       required_count: int(req.body.required_count, "Times required", { min: 1 }),
       points_reward: int(req.body.points_reward, "Points", { min: 0 }),
@@ -73,6 +74,8 @@ adminAchievements.put(
     const d = getDb();
     const fields = {};
     if (req.body.title !== undefined) fields.title = str(req.body.title, "Title");
+    if (req.body.description !== undefined)
+      fields.description = optStr(req.body.description, "Description");
     if (req.body.icon !== undefined) fields.icon = str(req.body.icon, "Icon", { max: 80 });
     if (req.body.required_count !== undefined)
       fields.required_count = int(req.body.required_count, "Times required", { min: 1 });

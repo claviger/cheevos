@@ -3,7 +3,7 @@
 import { Router } from "express";
 import { getDb, getBalance } from "../db.js";
 import * as logic from "../logic.js";
-import { str, int, oneOf } from "../validate.js";
+import { str, optStr, int, oneOf } from "../validate.js";
 import { handle, idParam } from "./helpers.js";
 
 // --- Public / child router -------------------------------------------------
@@ -42,6 +42,7 @@ adminRewards.post(
     const d = getDb();
     const data = {
       title: str(req.body.title, "Title"),
+      description: optStr(req.body.description, "Description"),
       icon: str(req.body.icon, "Icon", { max: 80 }),
       cost: int(req.body.cost, "Cost", { min: 0 }),
       type: oneOf(req.body.type, "Type", ["one_time", "repeatable"]),
@@ -56,6 +57,8 @@ adminRewards.put(
     const d = getDb();
     const fields = {};
     if (req.body.title !== undefined) fields.title = str(req.body.title, "Title");
+    if (req.body.description !== undefined)
+      fields.description = optStr(req.body.description, "Description");
     if (req.body.icon !== undefined) fields.icon = str(req.body.icon, "Icon", { max: 80 });
     if (req.body.cost !== undefined) fields.cost = int(req.body.cost, "Cost", { min: 0 });
     if (req.body.type !== undefined)

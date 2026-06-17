@@ -1,6 +1,6 @@
 // Treasure Vault: lists rewards the child can buy. Redeeming is gated by the
 // server (re-checks balance); the client just disables what isn't affordable.
-import { api, el, clear, icon, coin, loadIcons, initChrome, refreshBalance, toast } from "./api.js";
+import { api, el, clear, icon, coin, rewardTier, loadIcons, initChrome, refreshBalance, toast } from "./api.js";
 
 const vault = document.getElementById("vault");
 const empty = document.getElementById("empty");
@@ -15,10 +15,16 @@ function card(r) {
     text: r.type === "one_time" ? "one-time" : "repeatable",
   });
 
+  const body = el("div", { class: "card-body" }, [
+    el("div", { class: "card-head" }, [el("div", { class: "card-title", text: r.title }), cost]),
+    r.description ? el("div", { class: "card-desc", text: r.description }) : null,
+    tag,
+  ]);
+
   return el(
     "button",
     {
-      class: "card reward" + (affordable ? "" : " locked"),
+      class: `card reward tier-${rewardTier(r.cost)}` + (affordable ? "" : " locked"),
       type: "button",
       disabled: affordable ? null : "true",
       title: affordable ? "Tap to redeem" : "Not enough gold yet",
@@ -26,9 +32,7 @@ function card(r) {
     },
     [
       el("div", { class: "card-icon" }, [icon(r.icon, "lg")]),
-      el("div", { class: "card-title", text: r.title }),
-      cost,
-      tag,
+      body,
       affordable ? null : el("div", { class: "stamp lock", text: "🔒 locked" }),
     ]
   );
@@ -63,7 +67,7 @@ async function load() {
 }
 
 (async function init() {
-  initChrome("vault");
+  await initChrome("vault");
   await loadIcons();
   try {
     await load();

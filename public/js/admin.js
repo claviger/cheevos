@@ -1,6 +1,6 @@
 // Parent console: password login, then CRUD for achievements & rewards, plus the
 // redemption history. All mutations carry the CSRF token (handled in api.js).
-import { api, el, clear, icon, coin, loadIcons, setCsrf, toast } from "./api.js";
+import { api, el, clear, icon, coin, rewardTier, loadIcons, setCsrf, applyTitle, toast } from "./api.js";
 
 const $ = (id) => document.getElementById(id);
 
@@ -47,7 +47,7 @@ async function showConsole() {
   $("logout").classList.remove("hidden");
   await loadIcons();
   initIconButtons();
-  await Promise.all([loadAchievements(), loadRewards(), loadHistory()]);
+  await Promise.all([loadAchievements(), loadRewards(), loadHistory(), loadSettings()]);
 }
 
 // --- Tabs ------------------------------------------------------------------
@@ -55,7 +55,7 @@ document.querySelectorAll(".tab").forEach((btn) => {
   btn.addEventListener("click", () => {
     document.querySelectorAll(".tab").forEach((b) => b.classList.toggle("active", b === btn));
     const name = btn.dataset.tab;
-    ["achievements", "rewards", "history"].forEach((t) => {
+    ["achievements", "rewards", "history", "settings"].forEach((t) => {
       $("tab-" + t).classList.toggle("hidden", t !== name);
     });
   });
@@ -117,6 +117,7 @@ achForm.addEventListener("submit", async (e) => {
   const id = $("ach-id").value;
   const body = {
     title: $("ach-title").value,
+    description: $("ach-desc").value,
     icon: $("ach-icon").value,
     required_count: Number($("ach-required").value),
     points_reward: Number($("ach-points").value),
@@ -136,6 +137,7 @@ achForm.addEventListener("submit", async (e) => {
 function editAchievement(a) {
   $("ach-id").value = a.id;
   $("ach-title").value = a.title;
+  $("ach-desc").value = a.description || "";
   $("ach-required").value = a.required_count;
   $("ach-points").value = a.points_reward;
   $("ach-current").value = a.current_count;
@@ -172,6 +174,7 @@ async function loadAchievements() {
         el("div", { class: "row-icon" }, [icon(a.icon)]),
         el("div", { class: "row-main" }, [
           el("div", { class: "row-title", text: a.title }),
+          a.description ? el("div", { class: "row-desc", text: a.description }) : null,
           el("div", { class: "row-meta", text: meta }),
         ]),
         el("div", { class: "row-actions" }, [
@@ -202,6 +205,7 @@ rewForm.addEventListener("submit", async (e) => {
   const id = $("rew-id").value;
   const body = {
     title: $("rew-title").value,
+    description: $("rew-desc").value,
     icon: $("rew-icon").value,
     cost: Number($("rew-cost").value),
     type: $("rew-type").value,
@@ -220,6 +224,7 @@ rewForm.addEventListener("submit", async (e) => {
 function editReward(r) {
   $("rew-id").value = r.id;
   $("rew-title").value = r.title;
+  $("rew-desc").value = r.description || "";
   $("rew-cost").value = r.cost;
   $("rew-type").value = r.type;
   $("rew-icon").value = r.icon;
@@ -269,14 +274,19 @@ async function loadRewards() {
       );
     }
     list.appendChild(
-      el("div", { class: "row" + (r.status === "redeemed" ? " dim" : "") }, [
-        el("div", { class: "row-icon" }, [icon(r.icon)]),
-        el("div", { class: "row-main" }, [
-          el("div", { class: "row-title", text: r.title }),
-          el("div", { class: "row-meta", text: meta }),
-        ]),
-        el("div", { class: "row-actions" }, actions),
-      ])
+      el(
+        "div",
+        { class: `row reward-row tier-${rewardTier(r.cost)}` + (r.status === "redeemed" ? " dim" : "") },
+        [
+          el("div", { class: "row-icon" }, [icon(r.icon)]),
+          el("div", { class: "row-main" }, [
+            el("div", { class: "row-title", text: r.title }),
+            r.description ? el("div", { class: "row-desc", text: r.description }) : null,
+            el("div", { class: "row-meta", text: meta }),
+          ]),
+          el("div", { class: "row-actions" }, actions),
+        ]
+      )
     );
   });
 }
@@ -308,5 +318,26 @@ async function loadHistory() {
     );
   });
 }
+
+// --- Settings (editable caption) -------------------------------------------
+async function loadSettings() {
+  try {
+    const { title } = await api("settings");
+    $("app-title-input").value = title || "";
+  } catch {
+    /* ignore */
+  }
+}
+
+$("settings-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  try {
+    await api("admin/settings", { method: "PUT", body: { title: $("app-title-input").value } });
+    await applyTitle(); // refresh the header caption live
+    toast("Caption updated.", "success");
+  } catch (err) {
+    toast(err.message, "error");
+  }
+});
 
 boot().catch((err) => toast(err.message, "error"));

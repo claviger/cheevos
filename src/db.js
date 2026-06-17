@@ -63,7 +63,40 @@ function migrate(d) {
       cost_snapshot  INTEGER NOT NULL,
       redeemed_at    TEXT    NOT NULL
     );
+
+    CREATE TABLE IF NOT EXISTS settings (
+      key   TEXT PRIMARY KEY,
+      value TEXT NOT NULL
+    );
   `);
+
+  // Incremental, idempotent migrations for already-deployed databases.
+  addColumnIfMissing(d, "achievements", "description", "TEXT NOT NULL DEFAULT ''");
+  addColumnIfMissing(d, "rewards", "description", "TEXT NOT NULL DEFAULT ''");
+}
+
+// Add a column only if it doesn't already exist (SQLite has no ADD COLUMN IF
+// NOT EXISTS). Lets existing installs upgrade without losing data.
+function addColumnIfMissing(d, table, column, definition) {
+  const cols = d.prepare(`PRAGMA table_info(${table})`).all();
+  if (!cols.some((c) => c.name === column)) {
+    d.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
+  }
+}
+
+// --- Settings (key/value) --------------------------------------------------
+const SETTING_DEFAULTS = { app_title: "Cheevos" };
+
+export function getSetting(key, d = getDb()) {
+  const row = d.prepare(`SELECT value FROM settings WHERE key = ?`).get(key);
+  return row ? row.value : SETTING_DEFAULTS[key] ?? null;
+}
+
+export function setSetting(key, value, d = getDb()) {
+  d.prepare(
+    `INSERT INTO settings (key, value) VALUES (?, ?)
+       ON CONFLICT(key) DO UPDATE SET value = excluded.value`
+  ).run(key, value);
 }
 
 // Today's date in the server's local timezone as YYYY-MM-DD. The "day boundary"

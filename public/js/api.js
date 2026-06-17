@@ -92,11 +92,39 @@ export function coin(extraClass = "") {
   return el("img", { src: "icons/coin.svg", alt: "gold", class: `coin ${extraClass}`.trim() });
 }
 
+// Reward color tier by point cost: white 1-10, green 11-50, blue 51-99,
+// purple 100+. Returns the tier name used as a CSS class suffix.
+export function rewardTier(cost) {
+  if (cost >= 100) return "purple";
+  if (cost >= 51) return "blue";
+  if (cost >= 11) return "green";
+  return "white";
+}
+
 // --- Chrome (header nav + balance) ----------------------------------------
-export function initChrome(active) {
+export async function initChrome(active) {
   document.querySelectorAll("[data-nav]").forEach((a) => {
     if (a.dataset.nav === active) a.classList.add("active");
   });
+  await applyTitle();
+}
+
+// Fetch the parent-configured caption and apply it to the header + tab title.
+// Elements with [data-app-title] get the caption; a "-suffix" attribute appends
+// (e.g. the admin header shows "<caption> — Parents").
+export async function applyTitle() {
+  let title = "Cheevos";
+  try {
+    title = (await api("settings")).title || title;
+  } catch {
+    /* keep default */
+  }
+  document.querySelectorAll("[data-app-title]").forEach((node) => {
+    const suffix = node.getAttribute("data-suffix") || "";
+    node.textContent = title + suffix;
+  });
+  document.title = title + (document.body.dataset.titleSuffix || "");
+  return title;
 }
 
 export async function refreshBalance(value) {

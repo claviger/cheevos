@@ -20,7 +20,16 @@ function card(a) {
     el("span", { text: `${a.points_reward}` }),
   ]);
 
-  const node = el(
+  const body = el("div", { class: "card-body" }, [
+    el("div", { class: "card-head" }, [
+      el("div", { class: "card-title", text: a.title }),
+      reward,
+    ]),
+    a.description ? el("div", { class: "card-desc", text: a.description }) : null,
+    progress,
+  ]);
+
+  return el(
     "button",
     {
       class: "card quest" + (a.marked_today ? " marked" : ""),
@@ -30,13 +39,10 @@ function card(a) {
     },
     [
       el("div", { class: "card-icon" }, [icon(a.icon, "lg")]),
-      el("div", { class: "card-title", text: a.title }),
-      progress,
-      reward,
+      body,
       a.marked_today ? el("div", { class: "stamp", text: "✓ done today" }) : null,
     ]
   );
-  return node;
 }
 
 async function onTap(a) {
@@ -70,7 +76,7 @@ async function load() {
 }
 
 (async function init() {
-  initChrome("board");
+  await initChrome("board");
   await loadIcons();
   try {
     await load();

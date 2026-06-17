@@ -11,11 +11,17 @@ function fmtDate(iso) {
 }
 
 function trophy(a) {
+  const body = el("div", { class: "card-body" }, [
+    el("div", { class: "card-head" }, [
+      el("div", { class: "card-title", text: a.title }),
+      el("div", { class: "reward-chip" }, [coin("sm"), el("span", { text: `${a.points_reward}` })]),
+    ]),
+    a.description ? el("div", { class: "card-desc", text: a.description }) : null,
+    el("div", { class: "earned", text: `Earned ${fmtDate(a.completed_at)}` }),
+  ]);
   return el("div", { class: "card trophy" }, [
     el("div", { class: "card-icon" }, [icon(a.icon, "lg")]),
-    el("div", { class: "card-title", text: a.title }),
-    el("div", { class: "reward-chip" }, [coin("sm"), el("span", { text: `${a.points_reward}` })]),
-    el("div", { class: "earned", text: `Earned ${fmtDate(a.completed_at)}` }),
+    body,
   ]);
 }
 
@@ -32,7 +38,7 @@ async function load() {
 }
 
 (async function init() {
-  initChrome("hall");
+  await initChrome("hall");
   await loadIcons();
   try {
     await load();

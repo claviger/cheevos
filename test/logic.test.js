@@ -8,13 +8,13 @@ import assert from "node:assert/strict";
 // Force an in-memory DB BEFORE importing modules that read config.
 process.env.DB_FILE = ":memory:";
 
-const { getDb, getBalance } = await import("../src/db.js");
+const { getDb, getBalance, getSetting, setSetting } = await import("../src/db.js");
 const logic = await import("../src/logic.js");
 
 const d = getDb();
 
 beforeEach(() => {
-  d.exec("DELETE FROM daily_marks; DELETE FROM redemptions; DELETE FROM rewards; DELETE FROM achievements;");
+  d.exec("DELETE FROM daily_marks; DELETE FROM redemptions; DELETE FROM rewards; DELETE FROM achievements; DELETE FROM settings;");
 });
 
 function newAchievement(over = {}) {
@@ -134,4 +134,38 @@ test("history snapshot survives deleting the reward", () => {
   const history = logic.listRedemptions(d);
   assert.equal(history[0].title_snapshot, "Movie night");
   assert.equal(history[0].reward_id, null, "FK nulled but snapshot retained");
+});
+
+test("achievements store and update a description (defaults to empty)", () => {
+  const a = newAchievement();
+  assert.equal(a.description, "", "defaults to empty when omitted");
+  const withDesc = logic.createAchievement(d, {
+    title: "Read",
+    description: "20 minutes of reading",
+    icon: "book",
+    required_count: 5,
+    points_reward: 10,
+  });
+  assert.equal(withDesc.description, "20 minutes of reading");
+  const edited = logic.updateAchievement(d, withDesc.id, { description: "Read a chapter" });
+  assert.equal(edited.description, "Read a chapter");
+  assert.equal(edited.title, "Read", "other fields preserved when only description changes");
+});
+
+test("rewards store a description", () => {
+  const r = logic.createReward(d, {
+    title: "Movie",
+    description: "Pick the family movie",
+    icon: "movie",
+    cost: 100,
+    type: "one_time",
+  });
+  assert.equal(r.description, "Pick the family movie");
+  assert.equal(logic.updateReward(d, r.id, { description: "Friday movie" }).description, "Friday movie");
+});
+
+test("settings: app_title defaults to Cheevos and is editable", () => {
+  assert.equal(getSetting("app_title", d), "Cheevos");
+  setSetting("app_title", "Quest Hall", d);
+  assert.equal(getSetting("app_title", d), "Quest Hall");
 });

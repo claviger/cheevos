@@ -7,11 +7,11 @@
   <link rel="icon" href="icons/coin.svg" />
   <link rel="stylesheet" href="css/theme.css" />
 </head>
-<body class="admin">
+<body class="admin" data-title-suffix=" — Parents">
   <header class="topbar">
     <div class="brand">
       <span class="brand-mark"></span>
-      <h1>Cheevos — Parents</h1>
+      <h1 data-app-title data-suffix=" — Parents">Cheevos — Parents</h1>
     </div>
     <nav class="nav">
       <a href="index.html" data-nav="board">← Back to Quest Board</a>
@@ -37,6 +37,7 @@
         <button class="tab active" data-tab="achievements">Achievements</button>
         <button class="tab" data-tab="rewards">Rewards</button>
         <button class="tab" data-tab="history">Redemption History</button>
+        <button class="tab" data-tab="settings">Settings</button>
       </div>
 
       <!-- Achievements -->
@@ -46,6 +47,7 @@
           <form id="ach-form" class="grid-form">
             <input type="hidden" id="ach-id" />
             <label>Title<input id="ach-title" maxlength="200" required /></label>
+            <label class="span-2">Description <span class="opt">(optional)</span><input id="ach-desc" maxlength="280" placeholder="Shown under the name" /></label>
             <label>Times required<input id="ach-required" type="number" min="1" value="1" required /></label>
             <label>Points reward<input id="ach-points" type="number" min="0" value="10" required /></label>
             <label id="ach-current-wrap" class="hidden">Done so far<input id="ach-current" type="number" min="0" value="0" /></label>
@@ -70,6 +72,7 @@
           <form id="rew-form" class="grid-form">
             <input type="hidden" id="rew-id" />
             <label>Title<input id="rew-title" maxlength="200" required /></label>
+            <label class="span-2">Description <span class="opt">(optional)</span><input id="rew-desc" maxlength="280" placeholder="Shown under the name" /></label>
             <label>Cost (gold)<input id="rew-cost" type="number" min="0" value="50" required /></label>
             <label>Type
               <select id="rew-type">
@@ -97,6 +100,18 @@
           <h3>Redemption History</h3>
           <p class="section-sub">What the child has redeemed — fulfill these rewards in real life.</p>
           <div id="history-list" class="admin-list"></div>
+        </div>
+      </div>
+
+      <!-- Settings -->
+      <div id="tab-settings" class="tab-panel hidden">
+        <div class="panel narrow">
+          <h3>Display Settings</h3>
+          <p class="section-sub">The caption shown at the top of every screen.</p>
+          <form id="settings-form" class="form-row">
+            <input id="app-title-input" maxlength="60" placeholder="App caption" required />
+            <button class="btn" type="submit">Save</button>
+          </form>
         </div>
       </div>
     </section>

@@ -11,6 +11,7 @@ import { publicAchievements, adminAchievements } from "./src/routes/achievements
 import { publicRewards, adminRewards } from "./src/routes/rewards.js";
 import { adminAuth } from "./src/routes/admin.js";
 import { publicIcons } from "./src/routes/icons.js";
+import { publicSettings, adminSettings } from "./src/routes/settings.js";
 
 const app = express();
 app.set("trust proxy", "loopback"); // behind nginx on localhost
@@ -53,6 +54,7 @@ api.use(sessionMiddleware());
 api.use(publicAchievements);
 api.use(publicRewards);
 api.use(publicIcons);
+api.use(publicSettings);
 api.get("/balance", (req, res) => res.json({ balance: getBalance(getDb()) }));
 
 // Admin auth (login/logout/session) — no admin gate.
@@ -63,6 +65,7 @@ const adminApi = express.Router();
 adminApi.use(requireAdmin, requireCsrf);
 adminApi.use(adminAchievements);
 adminApi.use(adminRewards);
+adminApi.use(adminSettings);
 api.use("/admin", adminApi);
 
 // JSON 404 for unknown API routes.

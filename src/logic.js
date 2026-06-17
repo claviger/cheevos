@@ -98,16 +98,16 @@ export function unmarkAchievement(d, id, today = localDate()) {
 
 // --- Admin achievement operations -----------------------------------------
 
-export function createAchievement(d, { title, icon, required_count, points_reward }) {
+export function createAchievement(d, { title, description = "", icon, required_count, points_reward }) {
   const order =
     d.prepare(`SELECT COALESCE(MAX(sort_order), 0) + 1 AS v FROM achievements`).get().v;
   const info = d
     .prepare(
       `INSERT INTO achievements
-         (title, icon, required_count, points_reward, current_count, status, sort_order, created_at)
-       VALUES (?, ?, ?, ?, 0, 'active', ?, ?)`
+         (title, description, icon, required_count, points_reward, current_count, status, sort_order, created_at)
+       VALUES (?, ?, ?, ?, ?, 0, 'active', ?, ?)`
     )
-    .run(title, icon, required_count, points_reward, order, nowIso());
+    .run(title, description, icon, required_count, points_reward, order, nowIso());
   return getAchievement(d, info.lastInsertRowid);
 }
 
@@ -120,6 +120,7 @@ export function updateAchievement(d, id, fields) {
     if (!a) throw new RuleError("Achievement not found.", 404);
 
     const title = fields.title ?? a.title;
+    const description = fields.description ?? a.description;
     const icon = fields.icon ?? a.icon;
     const required_count = fields.required_count ?? a.required_count;
     const points_reward = fields.points_reward ?? a.points_reward;
@@ -137,10 +138,10 @@ export function updateAchievement(d, id, fields) {
 
     d.prepare(
       `UPDATE achievements
-          SET title = ?, icon = ?, required_count = ?, points_reward = ?,
+          SET title = ?, description = ?, icon = ?, required_count = ?, points_reward = ?,
               current_count = ?, status = ?, completed_at = ?
         WHERE id = ?`
-    ).run(title, icon, required_count, points_reward, current_count, status, completed_at, id);
+    ).run(title, description, icon, required_count, points_reward, current_count, status, completed_at, id);
     return getAchievement(d, id);
   });
   return tx();
@@ -167,14 +168,14 @@ export function getReward(d, id) {
   return d.prepare(`SELECT * FROM rewards WHERE id = ?`).get(id);
 }
 
-export function createReward(d, { title, icon, cost, type }) {
+export function createReward(d, { title, description = "", icon, cost, type }) {
   const order = d.prepare(`SELECT COALESCE(MAX(sort_order), 0) + 1 AS v FROM rewards`).get().v;
   const info = d
     .prepare(
-      `INSERT INTO rewards (title, icon, cost, type, status, sort_order, created_at)
-       VALUES (?, ?, ?, ?, 'active', ?, ?)`
+      `INSERT INTO rewards (title, description, icon, cost, type, status, sort_order, created_at)
+       VALUES (?, ?, ?, ?, ?, 'active', ?, ?)`
     )
-    .run(title, icon, cost, type, order, nowIso());
+    .run(title, description, icon, cost, type, order, nowIso());
   return getReward(d, info.lastInsertRowid);
 }
 
@@ -182,12 +183,14 @@ export function updateReward(d, id, fields) {
   const r = getReward(d, id);
   if (!r) throw new RuleError("Reward not found.", 404);
   const title = fields.title ?? r.title;
+  const description = fields.description ?? r.description;
   const icon = fields.icon ?? r.icon;
   const cost = fields.cost ?? r.cost;
   const type = fields.type ?? r.type;
   const status = fields.status ?? r.status;
-  d.prepare(`UPDATE rewards SET title = ?, icon = ?, cost = ?, type = ?, status = ? WHERE id = ?`)
-    .run(title, icon, cost, type, status, id);
+  d.prepare(
+    `UPDATE rewards SET title = ?, description = ?, icon = ?, cost = ?, type = ?, status = ? WHERE id = ?`
+  ).run(title, description, icon, cost, type, status, id);
   return getReward(d, id);
 }
 

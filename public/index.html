@@ -11,13 +11,14 @@
   <header class="topbar">
     <div class="brand">
       <span class="brand-mark"></span>
-      <h1>Cheevos</h1>
+      <h1 data-app-title>Cheevos</h1>
     </div>
     <nav class="nav">
       <a href="index.html" data-nav="board">Quest Board</a>
       <a href="rewards.html" data-nav="vault">Treasure Vault</a>
       <a href="hall.html" data-nav="hall">Hall of Fame</a>
     </nav>
+    <a class="parents-link" href="admin.html">⚙ Parents</a>
     <div class="gold-badge" id="gold-badge" title="Your gold">
       <img class="coin" src="icons/coin.svg" alt="gold" />
       <span id="gold-value">0</span>
@@ -30,10 +31,6 @@
     <section id="board" class="card-grid" aria-live="polite"></section>
     <p id="empty" class="empty hidden">No quests yet. Ask a parent to add some!</p>
   </main>
-
-  <footer class="footer">
-    <a href="admin.html">⚙ Parents</a>
-  </footer>
 
   <script type="module" src="js/board.js"></script>
 </body>

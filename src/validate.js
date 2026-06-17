@@ -10,6 +10,16 @@ export function str(value, field, { min = 1, max = 200 } = {}) {
   return v;
 }
 
+// Optional free text (e.g. a description). Missing/empty is allowed and returns
+// "". Still length-checked and type-checked.
+export function optStr(value, field, { max = 280 } = {}) {
+  if (value === undefined || value === null) return "";
+  if (typeof value !== "string") throw new ValidationError(`${field} must be text.`);
+  const v = value.trim();
+  if (v.length > max) throw new ValidationError(`${field} must be at most ${max} characters.`);
+  return v;
+}
+
 export function int(value, field, { min = 0, max = 1_000_000 } = {}) {
   const n = Number(value);
   if (!Number.isInteger(n)) throw new ValidationError(`${field} must be a whole number.`);
