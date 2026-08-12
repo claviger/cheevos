@@ -26,7 +26,7 @@ function card(a) {
   ]);
   if (a.repeatable) {
     badges.insertBefore(
-      el("span", { class: "repeat-badge", title: "Comes back every day", text: "↻ daily" }),
+      el("span", { class: "repeat-badge", title: "Comes back after completion", text: "↻ repeatable" }),
       reward
     );
   }
