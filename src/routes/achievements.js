@@ -63,6 +63,7 @@ adminAchievements.post(
       icon: str(req.body.icon, "Icon", { max: 80 }),
       required_count: int(req.body.required_count, "Times required", { min: 1 }),
       points_reward: int(req.body.points_reward, "Points", { min: 0 }),
+      repeatable: req.body.repeatable ? 1 : 0,
     };
     res.status(201).json({ achievement: logic.createAchievement(d, data) });
   })
@@ -83,6 +84,7 @@ adminAchievements.put(
       fields.points_reward = int(req.body.points_reward, "Points", { min: 0 });
     if (req.body.current_count !== undefined)
       fields.current_count = int(req.body.current_count, "Current count", { min: 0 });
+    if (req.body.repeatable !== undefined) fields.repeatable = req.body.repeatable ? 1 : 0;
     res.json({ achievement: logic.updateAchievement(d, idParam(req), fields) });
   })
 );

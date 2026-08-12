@@ -20,11 +20,19 @@ function card(a) {
     el("span", { text: `${a.points_reward}` }),
   ]);
 
+  const badges = el("div", { class: "card-head" }, [
+    el("div", { class: "card-title", text: a.title }),
+    reward,
+  ]);
+  if (a.repeatable) {
+    badges.insertBefore(
+      el("span", { class: "repeat-badge", title: "Comes back every day", text: "↻ daily" }),
+      reward
+    );
+  }
+
   const body = el("div", { class: "card-body" }, [
-    el("div", { class: "card-head" }, [
-      el("div", { class: "card-title", text: a.title }),
-      reward,
-    ]),
+    badges,
     a.description ? el("div", { class: "card-desc", text: a.description }) : null,
     progress,
   ]);

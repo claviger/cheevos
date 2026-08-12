@@ -14,7 +14,7 @@ const logic = await import("../src/logic.js");
 const d = getDb();
 
 beforeEach(() => {
-  d.exec("DELETE FROM daily_marks; DELETE FROM redemptions; DELETE FROM rewards; DELETE FROM achievements; DELETE FROM settings;");
+  d.exec("DELETE FROM daily_marks; DELETE FROM completions; DELETE FROM redemptions; DELETE FROM rewards; DELETE FROM achievements; DELETE FROM settings;");
 });
 
 function newAchievement(over = {}) {
@@ -162,6 +162,57 @@ test("rewards store a description", () => {
   });
   assert.equal(r.description, "Pick the family movie");
   assert.equal(logic.updateReward(d, r.id, { description: "Friday movie" }).description, "Friday movie");
+});
+
+test("repeatable: completion is recorded, points kept, and it returns the next day at 0", () => {
+  const a = newAchievement({ required_count: 1, points_reward: 15, repeatable: 1 });
+  const done = logic.markAchievement(d, a.id, "2026-06-14");
+  assert.equal(done.status, "completed", "stays completed for the rest of the day");
+  assert.equal(getBalance(d), 15);
+  assert.equal(logic.listCompleted(d).length, 1, "hall of fame entry recorded");
+
+  // Next day: back on the active board with a fresh count.
+  const active = logic.listActive(d, "2026-06-15");
+  const again = active.find((x) => x.id === a.id);
+  assert.ok(again, "available again the next day");
+  assert.equal(again.status, "active");
+  assert.equal(again.current_count, 0);
+  assert.equal(getBalance(d), 15, "earlier points are kept after the reset");
+});
+
+test("repeatable: each completion adds points and a hall entry", () => {
+  const a = newAchievement({ required_count: 1, points_reward: 10, repeatable: 1 });
+  logic.markAchievement(d, a.id, "2026-06-14");
+  logic.listActive(d, "2026-06-15"); // day rolls over → reset
+  logic.markAchievement(d, a.id, "2026-06-15");
+  assert.equal(getBalance(d), 20);
+  assert.equal(logic.listCompleted(d).length, 2);
+});
+
+test("repeatable: does not reset on the same day it was completed", () => {
+  const a = newAchievement({ required_count: 1, points_reward: 10, repeatable: 1 });
+  logic.markAchievement(d, a.id, "2026-06-14");
+  const active = logic.listActive(d, "2026-06-14");
+  assert.equal(active.find((x) => x.id === a.id), undefined, "off the board until tomorrow");
+});
+
+test("repeatable: un-marking a same-day completion revokes that completion", () => {
+  const a = newAchievement({ required_count: 1, points_reward: 10, repeatable: 1 });
+  logic.markAchievement(d, a.id, "2026-06-14");
+  logic.unmarkAchievement(d, a.id, "2026-06-14");
+  assert.equal(getBalance(d), 0);
+  assert.equal(logic.listCompleted(d).length, 0);
+});
+
+test("hall entries survive editing the achievement afterwards (snapshots)", () => {
+  const a = newAchievement({ required_count: 1, points_reward: 10, repeatable: 1 });
+  logic.markAchievement(d, a.id, "2026-06-14");
+  logic.listActive(d, "2026-06-15");
+  logic.updateAchievement(d, a.id, { title: "New name", points_reward: 99 });
+  const hall = logic.listCompleted(d);
+  assert.equal(hall[0].title, "Brush teeth");
+  assert.equal(hall[0].points_reward, 10);
+  assert.equal(getBalance(d), 10, "past completions keep their original points");
 });
 
 test("settings: app_title defaults to Cheevos and is editable", () => {

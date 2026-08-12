@@ -121,6 +121,7 @@ achForm.addEventListener("submit", async (e) => {
     icon: $("ach-icon").value,
     required_count: Number($("ach-required").value),
     points_reward: Number($("ach-points").value),
+    repeatable: $("ach-repeatable").checked,
   };
   if (id) body.current_count = Number($("ach-current").value);
   try {
@@ -141,6 +142,7 @@ function editAchievement(a) {
   $("ach-required").value = a.required_count;
   $("ach-points").value = a.points_reward;
   $("ach-current").value = a.current_count;
+  $("ach-repeatable").checked = Boolean(a.repeatable);
   $("ach-icon").value = a.icon;
   setIconButton("ach-icon-btn", a.icon);
   $("ach-form-title").textContent = `Edit: ${a.title}`;
@@ -168,7 +170,9 @@ async function loadAchievements() {
     return;
   }
   achievements.forEach((a) => {
-    const meta = `${a.current_count}/${a.required_count} · ${a.points_reward}g · ${a.status}`;
+    const meta =
+      `${a.current_count}/${a.required_count} · ${a.points_reward}g · ${a.status}` +
+      (a.repeatable ? " · repeatable" : "");
     list.appendChild(
       el("div", { class: "row" }, [
         el("div", { class: "row-icon" }, [icon(a.icon)]),

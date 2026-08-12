@@ -413,6 +413,18 @@ input:focus, select:focus { border-color: var(--gold); box-shadow: 0 0 0 2px rgb
 .grid-form .span-2 { grid-column: 1 / -1; }
 .opt { color: var(--muted); font-size: 0.85em; }
 .grid-form input, .grid-form select { width: 100%; }
+.grid-form .check-field { flex-direction: row; align-items: center; grid-column: 1 / -1; }
+.grid-form .check-field input { width: auto; }
+.repeat-badge {
+  flex: 0 0 auto;
+  align-self: center;
+  font-size: 0.75rem;
+  color: var(--ink-soft);
+  border: 1px solid var(--muted);
+  border-radius: 999px;
+  padding: 2px 8px;
+  white-space: nowrap;
+}
 .icon-field { display: flex; flex-direction: column; gap: 6px; font-size: 0.85rem; color: var(--ink-soft); }
 .icon-pick {
   width: 64px; height: 64px;

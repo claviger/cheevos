@@ -22,12 +22,44 @@ export function isMarkedOn(d, id, day) {
   );
 }
 
+// Record a completion in the history (snapshots the achievement so the entry
+// survives later edits). Earned points and the Hall of Fame read from here.
+function recordCompletion(d, a, when = nowIso()) {
+  d.prepare(
+    `INSERT INTO completions
+       (achievement_id, title_snapshot, description_snapshot, icon_snapshot, points_snapshot, completed_at)
+     VALUES (?, ?, ?, ?, ?, ?)`
+  ).run(a.id, a.title, a.description, a.icon, a.points_reward, when);
+}
+
+// Revoke the most recent completion for an achievement (used when a completion
+// is undone via unmark or an admin edit).
+function deleteLatestCompletion(d, achievementId) {
+  d.prepare(
+    `DELETE FROM completions WHERE id =
+       (SELECT id FROM completions WHERE achievement_id = ? ORDER BY id DESC LIMIT 1)`
+  ).run(achievementId);
+}
+
+// Repeatable achievements come back the next local day after completing: reset
+// any whose completion day is before `today`. The completion stays recorded in
+// the completions history (points + Hall of Fame entry are kept).
+export function resetDueRepeatables(d, today = localDate()) {
+  d.prepare(
+    `UPDATE achievements
+        SET status = 'active', current_count = 0, completed_at = NULL, completed_on = NULL
+      WHERE repeatable = 1 AND status = 'completed'
+        AND (completed_on IS NULL OR completed_on < ?)`
+  ).run(today);
+}
+
 // Annotate an active achievement row with whether it was marked today.
 export function decorateActive(d, row, today = localDate()) {
   return { ...row, marked_today: isMarkedOn(d, row.id, today) };
 }
 
 export function listActive(d, today = localDate()) {
+  resetDueRepeatables(d, today);
   const rows = d
     .prepare(`SELECT * FROM achievements WHERE status = 'active' ORDER BY sort_order, id`)
     .all();
@@ -35,14 +67,24 @@ export function listActive(d, today = localDate()) {
 }
 
 // All achievements regardless of status — for the parent console.
-export function listAllAchievements(d) {
+export function listAllAchievements(d, today = localDate()) {
+  resetDueRepeatables(d, today);
   return d.prepare(`SELECT * FROM achievements ORDER BY status, sort_order, id`).all();
 }
 
+// Hall of Fame: every recorded completion, newest first. Aliased to the same
+// field names the achievement cards use.
 export function listCompleted(d) {
   return d
     .prepare(
-      `SELECT * FROM achievements WHERE status = 'completed' ORDER BY completed_at DESC, id DESC`
+      `SELECT id, achievement_id,
+              title_snapshot       AS title,
+              description_snapshot AS description,
+              icon_snapshot        AS icon,
+              points_snapshot      AS points_reward,
+              completed_at
+         FROM completions
+        ORDER BY completed_at DESC, id DESC`
     )
     .all();
 }
@@ -53,6 +95,7 @@ export function listCompleted(d) {
 // already marked today rather than double-counting.
 export function markAchievement(d, id, today = localDate()) {
   const tx = d.transaction(() => {
+    resetDueRepeatables(d, today);
     const a = getAchievement(d, id);
     if (!a) throw new RuleError("Achievement not found.", 404);
     if (a.status !== "active") throw new RuleError("This achievement is already completed.", 409);
@@ -63,9 +106,10 @@ export function markAchievement(d, id, today = localDate()) {
     if (newCount >= a.required_count) {
       d.prepare(
         `UPDATE achievements
-            SET current_count = ?, status = 'completed', completed_at = ?
+            SET current_count = ?, status = 'completed', completed_at = ?, completed_on = ?
           WHERE id = ?`
-      ).run(newCount, nowIso(), id);
+      ).run(newCount, nowIso(), today, id);
+      recordCompletion(d, a);
     } else {
       d.prepare(`UPDATE achievements SET current_count = ? WHERE id = ?`).run(newCount, id);
     }
@@ -88,9 +132,11 @@ export function unmarkAchievement(d, id, today = localDate()) {
     // Reopen if it had just completed (count now below requirement).
     const status = newCount >= a.required_count ? "completed" : "active";
     const completedAt = status === "completed" ? a.completed_at : null;
+    const completedOn = status === "completed" ? a.completed_on : null;
+    if (a.status === "completed" && status === "active") deleteLatestCompletion(d, id);
     d.prepare(
-      `UPDATE achievements SET current_count = ?, status = ?, completed_at = ? WHERE id = ?`
-    ).run(newCount, status, completedAt, id);
+      `UPDATE achievements SET current_count = ?, status = ?, completed_at = ?, completed_on = ? WHERE id = ?`
+    ).run(newCount, status, completedAt, completedOn, id);
     return getAchievement(d, id);
   });
   return tx();
@@ -98,16 +144,16 @@ export function unmarkAchievement(d, id, today = localDate()) {
 
 // --- Admin achievement operations -----------------------------------------
 
-export function createAchievement(d, { title, description = "", icon, required_count, points_reward }) {
+export function createAchievement(d, { title, description = "", icon, required_count, points_reward, repeatable = 0 }) {
   const order =
     d.prepare(`SELECT COALESCE(MAX(sort_order), 0) + 1 AS v FROM achievements`).get().v;
   const info = d
     .prepare(
       `INSERT INTO achievements
-         (title, description, icon, required_count, points_reward, current_count, status, sort_order, created_at)
-       VALUES (?, ?, ?, ?, ?, 0, 'active', ?, ?)`
+         (title, description, icon, required_count, points_reward, repeatable, current_count, status, sort_order, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, 0, 'active', ?, ?)`
     )
-    .run(title, description, icon, required_count, points_reward, order, nowIso());
+    .run(title, description, icon, required_count, points_reward, repeatable ? 1 : 0, order, nowIso());
   return getAchievement(d, info.lastInsertRowid);
 }
 
@@ -125,23 +171,31 @@ export function updateAchievement(d, id, fields) {
     const required_count = fields.required_count ?? a.required_count;
     const points_reward = fields.points_reward ?? a.points_reward;
     const current_count = fields.current_count ?? a.current_count;
+    const repeatable = fields.repeatable !== undefined ? (fields.repeatable ? 1 : 0) : a.repeatable;
 
     let status = a.status;
     let completed_at = a.completed_at;
+    let completed_on = a.completed_on;
     if (current_count >= required_count) {
       status = "completed";
-      completed_at = a.status === "completed" ? a.completed_at : nowIso();
+      if (a.status !== "completed") {
+        completed_at = nowIso();
+        completed_on = localDate();
+        recordCompletion(d, { ...a, title, description, icon, points_reward }, completed_at);
+      }
     } else {
       status = "active";
       completed_at = null;
+      completed_on = null;
+      if (a.status === "completed") deleteLatestCompletion(d, id);
     }
 
     d.prepare(
       `UPDATE achievements
           SET title = ?, description = ?, icon = ?, required_count = ?, points_reward = ?,
-              current_count = ?, status = ?, completed_at = ?
+              repeatable = ?, current_count = ?, status = ?, completed_at = ?, completed_on = ?
         WHERE id = ?`
-    ).run(title, description, icon, required_count, points_reward, current_count, status, completed_at, id);
+    ).run(title, description, icon, required_count, points_reward, repeatable, current_count, status, completed_at, completed_on, id);
     return getAchievement(d, id);
   });
   return tx();
